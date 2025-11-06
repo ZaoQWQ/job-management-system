@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}删除岗位 - 岗位管理系统{% endblock %}
+{% block content %}
+    <h2>确认删除岗位</h2>
+    
+    <div style="padding: 20px; background-color: #f8d7da; border-radius: 4px; margin-bottom: 20px;">
+        <p style="font-weight: bold;">您确定要删除以下岗位吗？</p>
+        <p>企业名称: {{ job.company_name }}</p>
+        <p>岗位名称: {{ job.job_title }}</p>
+        <p>ID: {{ job.id }}</p>
+        <p style="color: red; font-weight: bold; margin-top: 15px;">此操作不可撤销！</p>
+    </div>
+    
+    <form action="{{ url_for('delete_job', job_id=job.id) }}" method="post">
+        <div class="actions">
+            <button type="submit" class="btn btn-danger">确认删除</button>
+            <a href="{{ url_for('view_job', job_id=job.id) }}" class="btn btn-secondary">取消</a>
+        </div>
+    </form>
+{% endblock %}

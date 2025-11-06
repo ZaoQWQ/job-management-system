@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}添加岗位 - 岗位管理系统{% endblock %}
+{% block content %}
+    <h2>添加新岗位</h2>
+    
+    <form action="{{ url_for('add_job') }}" method="post">
+        <div class="form-group">
+            <label for="company_name">企业名称 <span style="color: red;">*</span></label>
+            <input type="text" id="company_name" name="company_name" placeholder="请输入企业名称" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="job_title">岗位名称 <span style="color: red;">*</span></label>
+            <input type="text" id="job_title" name="job_title" placeholder="请输入岗位名称" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="salary">薪资</label>
+            <input type="text" id="salary" name="salary" placeholder="请输入薪资范围">
+        </div>
+        
+        <div class="form-group">
+            <label for="requirements">具体要求</label>
+            <textarea id="requirements" name="requirements" placeholder="请输入岗位具体要求"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="location">工作地点</label>
+            <input type="text" id="location" name="location" placeholder="请输入工作地点">
+        </div>
+        
+        <div class="form-group">
+            <label for="description">岗位描述</label>
+            <textarea id="description" name="description" placeholder="请输入岗位详细描述"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="contact_person">联系人</label>
+            <input type="text" id="contact_person" name="contact_person" placeholder="请输入联系人姓名">
+        </div>
+        
+        <div class="form-group">
+            <label for="contact_phone">联系电话</label>
+            <input type="text" id="contact_phone" name="contact_phone" placeholder="请输入联系电话">
+        </div>
+        
+        <div class="form-group">
+            <label for="email">电子邮箱</label>
+            <input type="text" id="email" name="email" placeholder="请输入电子邮箱">
+        </div>
+        
+        <div class="actions">
+            <button type="submit" class="btn btn-success">保存</button>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">取消</a>
+        </div>
+    </form>
+{% endblock %}

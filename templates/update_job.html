@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}更新岗位 - 岗位管理系统{% endblock %}
+{% block content %}
+    <h2>更新岗位信息</h2>
+    
+    <form action="{{ url_for('update_job', job_id=job[0]) }}" method="post">
+        <div class="form-group">
+            <label for="company_name">企业名称 <span style="color: red;">*</span></label>
+            <input type="text" id="company_name" name="company_name" value="{{ job[1] }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="job_title">岗位名称 <span style="color: red;">*</span></label>
+            <input type="text" id="job_title" name="job_title" value="{{ job[2] }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="salary">薪资</label>
+            <input type="text" id="salary" name="salary" value="{{ job[3] or '' }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="requirements">具体要求</label>
+            <textarea id="requirements" name="requirements">{{ job[4] or '' }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="location">工作地点</label>
+            <input type="text" id="location" name="location" value="{{ job[5] or '' }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="description">岗位描述</label>
+            <textarea id="description" name="description">{{ job[7] or '' }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="contact_person">联系人</label>
+            <input type="text" id="contact_person" name="contact_person" value="{{ job[8] or '' }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="contact_phone">联系电话</label>
+            <input type="text" id="contact_phone" name="contact_phone" value="{{ job[9] or '' }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="email">电子邮箱</label>
+            <input type="text" id="email" name="email" value="{{ job[10] or '' }}">
+        </div>
+        
+        <div class="actions">
+            <button type="submit" class="btn btn-success">保存更新</button>
+            <a href="{{ url_for('view_job', job_id=job[0]) }}" class="btn btn-secondary">取消</a>
+        </div>
+    </form>
+{% endblock %}

@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT岗位求职记录系统</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .btn-outline-primary {
+            color: #667eea;
+            border-color: #667eea;
+        }
+        .btn-outline-primary:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+        }
+        .status-badge {
+            padding: 0.35em 0.65em;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-applied { background-color: #e7f3ff; color: #0056b3; }
+        .status-interview { background-color: #fff3cd; color: #856404; }
+        .status-interviewing { background-color: #d1ecf1; color: #0c5460; }
+        .status-passed { background-color: #d4edda; color: #155724; }
+        .status-rejected { background-color: #f8d7da; color: #721c24; }
+        .status-abandoned { background-color: #e2e3e5; color: #495057; }
+        .table-hover tbody tr:hover {
+            background-color: #f8f9ff;
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .stats-card:nth-child(2) {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .stats-card:nth-child(3) {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        .stats-card:nth-child(4) {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        .stats-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+        @media (max-width: 768px) {
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+            .stats-number {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fa fa-briefcase mr-2"></i>
+                IT岗位求职记录系统
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <button id="btn-add-job" class="btn btn-secondary btn-sm ms-2">
+                            <span class="icon">+</span> 添加记录
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button id="btn-export-csv" class="btn btn-outline-primary btn-sm ms-2">
+                            <span class="icon">↓</span> 导出CSV
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button id="btn-stats" class="btn btn-outline-primary btn-sm ms-2">
+                            <span class="icon">📊</span> 统计分析
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <div class="container-fluid" style="padding-top: 80px; padding-bottom: 50px;">
+        <!-- 搜索和筛选 -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <input type="text" id="search-company" class="form-control" placeholder="搜索公司名称">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" id="search-position" class="form-control" placeholder="搜索岗位名称">
+                    </div>
+                    <div class="col-md-2">
+                        <select id="filter-status" class="form-control">
+                            <option value="">所有状态</option>
+                            <option value="已投递">已投递</option>
+                            <option value="待面试">待面试</option>
+                            <option value="面试中">面试中</option>
+                            <option value="已通过">已通过</option>
+                            <option value="已拒绝">已拒绝</option>
+                            <option value="已放弃">已放弃</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select id="filter-source" class="form-control">
+                            <option value="">所有来源</option>
+                            <option value="拉勾网">拉勾网</option>
+                            <option value="BOSS直聘">BOSS直聘</option>
+                            <option value="智联招聘">智联招聘</option>
+                            <option value="前程无忧">前程无忧</option>
+                            <option value="内推">内推</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button id="btn-search" class="btn btn-primary w-100">
+                            <i class="fa fa-search mr-1"></i> 搜索
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 求职记录列表 -->
+        <div class="card">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">求职记录列表</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th style="width: 60px;">#</th>
+                                <th>公司名称</th>
+                                <th>岗位名称</th>
+                                <th>薪资范围</th>
+                                <th>工作地点</th>
+                                <th>投递日期</th>
+                                <th>招聘来源</th>
+                                <th>当前状态</th>
+                                <th style="width: 120px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="job-list">
+                            <!-- 记录将通过JavaScript动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-top text-center" id="empty-message">
+                <p class="text-muted mb-0">暂无求职记录，请点击上方的"添加记录"按钮开始记录您的求职信息</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑记录模态框 -->
+    <div class="modal fade" id="jobModal" tabindex="-1" aria-labelledby="jobModalLabel">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="jobModalLabel">添加新记录</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="jobForm">
+                        <input type="hidden" id="job-id">
+                        
+                        <div class="row g-4">
+                            <!-- 基本信息 -->
+                            <div class="col-md-6">
+                                <label for="company" class="form-label">公司名称 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="company" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="position" class="form-label">岗位名称 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="position" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="salary" class="form-label">薪资范围</label>
+                                <input type="text" class="form-control" id="salary" placeholder="如: 15k-25k">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="location" class="form-label">工作地点</label>
+                                <input type="text" class="form-control" id="location">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="apply-date" class="form-label">投递日期</label>
+                                <input type="date" class="form-control" id="apply-date">
+                            </div>
+                            
+                            <!-- 状态和来源 -->
+                            <div class="col-md-6">
+                                <label for="status" class="form-label">当前状态 <span class="text-danger">*</span></label>
+                                <select class="form-control" id="status" required>
+                                    <option value="已投递">已投递</option>
+                                    <option value="待面试">待面试</option>
+                                    <option value="面试中">面试中</option>
+                                    <option value="已通过">已通过</option>
+                                    <option value="已拒绝">已拒绝</option>
+                                    <option value="已放弃">已放弃</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="source" class="form-label">招聘来源</label>
+                                <select class="form-control" id="source">
+                                    <option value="">请选择</option>
+                                    <option value="拉勾网">拉勾网</option>
+                                    <option value="BOSS直聘">BOSS直聘</option>
+                                    <option value="智联招聘">智联招聘</option>
+                                    <option value="前程无忧">前程无忧</option>
+                                    <option value="内推">内推</option>
+                                    <option value="其他">其他</option>
+                                </select>
+                            </div>
+                            
+                            <!-- 详细信息 -->
+                            <div class="col-md-6">
+                                <label for="contact" class="form-label">联系人</label>
+                                <input type="text" class="form-control" id="contact">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">联系电话</label>
+                                <input type="tel" class="form-control" id="phone">
+                            </div>
+                            <div class="col-md-12">
+                                <label for="email" class="form-label">联系邮箱</label>
+                                <input type="email" class="form-control" id="email">
+                            </div>
+                            
+                            <!-- 描述信息 -->
+                            <div class="col-md-12">
+                                <label for="description" class="form-label">岗位描述摘要</label>
+                                <textarea class="form-control" id="description" rows="3"></textarea>
+                            </div>
+                            <div class="col-md-12">
+                                <label for="requirements" class="form-label">岗位要求摘要</label>
+                                <textarea class="form-control" id="requirements" rows="3"></textarea>
+                            </div>
+                            <div class="col-md-12">
+                                <label for="notes" class="form-label">备注信息</label>
+                                <textarea class="form-control" id="notes" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    <button type="button" id="btn-save-job" class="btn btn-primary">保存记录</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 查看详情模态框 -->
+    <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailModalLabel">求职记录详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="detail-content">
+                        <!-- 详情将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 统计分析模态框 -->
+    <div class="modal fade" id="statsModal" tabindex="-1" aria-labelledby="statsModalLabel">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="statsModalLabel">求职统计分析</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- 统计卡片 -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card stats-card p-4">
+                                <div class="stats-number" id="total-count">0</div>
+                                <div class="stats-label">总记录数</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card stats-card p-4">
+                                <div class="stats-number" id="interview-count">0</div>
+                                <div class="stats-label">面试中/待面试</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card stats-card p-4">
+                                <div class="stats-number" id="passed-count">0</div>
+                                <div class="stats-label">已通过</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card stats-card p-4">
+                                <div class="stats-number" id="rejected-count">0</div>
+                                <div class="stats-label">已拒绝/已放弃</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 图表区域 -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header">按状态分布</div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="statusChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header">按来源分布</div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="sourceChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 最近投递 -->
+                    <div class="card">
+                        <div class="card-header">最近投递记录</div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>日期</th>
+                                        <th>公司</th>
+                                        <th>岗位</th>
+                                        <th>状态</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-jobs">
+                                    <!-- 最近记录将通过JavaScript动态生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 确认删除模态框 -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">确认删除</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>确定要删除这条求职记录吗？此操作不可撤销。</p>
+                    <input type="hidden" id="delete-job-id">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" id="btn-confirm-delete" class="btn btn-danger">确认删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1050;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        @media (max-width: 768px) {
+            .modal-content {
+                margin: 10% auto;
+                width: 95%;
+            }
+        }
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-body {
+            padding: 1.5rem;
+        }
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1040;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            opacity: 0.5;
+        }
+        .btn-close {
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6c757d;
+        }
+        .btn-close:hover {
+            color: #000;
+        }
+        /* 按钮样式 */
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .btn-outline-primary {
+            color: #667eea;
+            border: 1px solid #667eea;
+            background-color: transparent;
+        }
+        .btn-outline-primary:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-outline-secondary {
+            color: #6c757d;
+            border: 1px solid #6c757d;
+            background-color: transparent;
+        }
+        .btn-outline-secondary:hover {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-outline-danger {
+            color: #dc3545;
+            border: 1px solid #dc3545;
+            background-color: transparent;
+        }
+        .btn-outline-danger:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        /* 表单样式 */
+        .form-control {
+            display: block;
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            outline: none;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        /* 卡片样式 */
+        .card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            word-wrap: break-word;
+            background-color: #fff;
+            background-clip: border-box;
+            border-radius: 0.375rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            margin-bottom: 1rem;
+        }
+        .card-body {
+            flex: 1 1 auto;
+            padding: 1.25rem;
+        }
+        .card-header {
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 0;
+            background-color: rgba(0, 0, 0, 0.03);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+        }
+        .card-footer {
+            padding: 0.75rem 1.25rem;
+            background-color: rgba(0, 0, 0, 0.03);
+            border-top: 1px solid rgba(0, 0, 0, 0.125);
+        }
+        /* 表格样式 */
+        .table {
+            width: 100%;
+            margin-bottom: 1rem;
+            background-color: transparent;
+            border-collapse: collapse;
+        }
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            vertical-align: top;
+            border-top: 1px solid #dee2e6;
+        }
+        .table thead th {
+            vertical-align: bottom;
+            border-bottom: 2px solid #dee2e6;
+            background-color: #f8f9fa;
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        .table-sm th,
+        .table-sm td {
+            padding: 0.5rem;
+            font-size: 0.875rem;
+        }
+        /* 图标替代 */
+        .icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            text-align: center;
+            font-size: 14px;
+        }
+        /* 响应式布局 */
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-right: -0.75rem;
+            margin-left: -0.75rem;
+        }
+        .col-md-2,
+        .col-md-3,
+        .col-md-4,
+        .col-md-6,
+        .col-md-12 {
+            position: relative;
+            width: 100%;
+            padding-right: 0.75rem;
+            padding-left: 0.75rem;
+        }
+        .col-md-2 {
+            flex: 0 0 16.66667%;
+            max-width: 16.66667%;
+        }
+        .col-md-3 {
+            flex: 0 0 25%;
+            max-width: 25%;
+        }
+        .col-md-4 {
+            flex: 0 0 33.33333%;
+            max-width: 33.33333%;
+        }
+        .col-md-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+        .col-md-12 {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+        .g-3 > [class*="col-"] {
+            padding-right: calc(0.75rem * 0.75);
+            padding-left: calc(0.75rem * 0.75);
+        }
+        .g-4 > [class*="col-"] {
+            padding-right: calc(1rem * 0.75);
+            padding-left: calc(1rem * 0.75);
+        }
+        @media (max-width: 768px) {
+            .col-md-2,
+            .col-md-3,
+            .col-md-4,
+            .col-md-6 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+        }
+        /* 间距工具 */
+        .mb-0 { margin-bottom: 0; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-3 { margin-bottom: 1rem; }
+        .mb-4 { margin-bottom: 1.5rem; }
+        .me-1 { margin-right: 0.25rem; }
+        .me-2 { margin-right: 0.5rem; }
+        .ms-2 { margin-left: 0.5rem; }
+        .w-100 { width: 100%; }
+        /* 文本工具 */
+        .text-center { text-align: center; }
+        .text-end { text-align: right; }
+        .text-muted { color: #6c757d; }
+        .text-danger { color: #dc3545; }
+        /* 显示/隐藏 */
+        .d-none { display: none; }
+        .d-block { display: block; }
+        .d-flex { display: flex; }
+        .justify-content-between { justify-content: space-between; }
+        .justify-content-end { justify-content: flex-end; }
+        .align-items-center { align-items: center; }
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+    <script>
+        // 全局变量
+        let jobs = [];
+
+        // 自定义模态框类
+        class SimpleModal {
+            constructor(modalElement) {
+                this.modalElement = modalElement;
+                this.isOpen = false;
+                
+                // 添加背景
+                this.backdrop = document.createElement('div');
+                this.backdrop.className = 'modal-backdrop';
+                this.backdrop.style.display = 'none';
+                document.body.appendChild(this.backdrop);
+                
+                // 关闭按钮事件
+                const closeButton = modalElement.querySelector('.btn-close');
+                if (closeButton) {
+                    closeButton.addEventListener('click', () => this.hide());
+                }
+                
+                // 背景点击关闭
+                this.backdrop.addEventListener('click', () => this.hide());
+                
+                // 阻止冒泡
+                modalElement.addEventListener('click', (e) => e.stopPropagation());
+            }
+            
+            show() {
+                this.modalElement.style.display = 'block';
+                this.backdrop.style.display = 'block';
+                this.isOpen = true;
+                document.body.style.overflow = 'hidden'; // 防止背景滚动
+            }
+            
+            hide() {
+                this.modalElement.style.display = 'none';
+                this.backdrop.style.display = 'none';
+                this.isOpen = false;
+                document.body.style.overflow = ''; // 恢复背景滚动
+            }
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化模态框
+            const jobModalElement = document.getElementById('jobModal');
+            const detailModalElement = document.getElementById('detailModal');
+            const deleteModalElement = document.getElementById('deleteModal');
+            const statsModalElement = document.getElementById('statsModal');
+            
+            window.jobModal = new SimpleModal(jobModalElement);
+            window.detailModal = new SimpleModal(detailModalElement);
+            window.deleteModal = new SimpleModal(deleteModalElement);
+            window.statsModal = new SimpleModal(statsModalElement);
+            
+            // 设置今天的日期为默认
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('apply-date').value = today;
+            
+            // 加载数据
+            loadJobs();
+            
+            // 绑定事件
+            bindEvents();
+        });
+
+        // 绑定事件处理函数
+        function bindEvents() {
+            // 添加记录按钮
+            document.getElementById('btn-add-job').addEventListener('click', function() {
+                showAddJobModal();
+            });
+            
+            // 保存记录按钮
+            document.getElementById('btn-save-job').addEventListener('click', function() {
+                saveJob();
+            });
+            
+            // 搜索按钮
+            document.getElementById('btn-search').addEventListener('click', function() {
+                filterJobs();
+            });
+            
+            // 导出CSV按钮
+            document.getElementById('btn-export-csv').addEventListener('click', function() {
+                exportToCSV();
+            });
+            
+            // 统计分析按钮
+            document.getElementById('btn-stats').addEventListener('click', function() {
+                showStatistics();
+            });
+            
+            // 确认删除按钮
+            document.getElementById('btn-confirm-delete').addEventListener('click', function() {
+                confirmDelete();
+            });
+            
+            // 回车键搜索
+            const searchInputs = [
+                document.getElementById('search-company'),
+                document.getElementById('search-position'),
+                document.getElementById('filter-status'),
+                document.getElementById('filter-source')
+            ];
+            searchInputs.forEach(input => {
+                input.addEventListener('keyup', function(e) {
+                    if (e.key === 'Enter') {
+                        filterJobs();
+                    }
+                });
+            });
+        }
+
+        // 从本地存储加载数据
+        function loadJobs() {
+            const savedJobs = localStorage.getItem('jobApplications');
+            if (savedJobs) {
+                jobs = JSON.parse(savedJobs);
+            } else {
+                jobs = [];
+                // 初始化一些模拟数据
+                initializeMockData();
+            }
+            renderJobList(jobs);
+        }
+
+        // 初始化模拟数据
+        function initializeMockData() {
+            const mockData = [
+                {
+                    id: 1,
+                    company: '字节跳动',
+                    position: '前端开发工程师',
+                    salary: '25k-35k',
+                    location: '北京',
+                    apply_date: '2024-01-15',
+                    description: '负责公司核心产品的Web前端开发',
+                    requirements: '熟悉React、Vue等前端框架，有3年以上前端开发经验',
+                    contact: '张经理',
+                    phone: '138****1234',
+                    email: 'hr@bytedance.com',
+                    source: '拉勾网',
+                    status: '面试中',
+                    notes: '技术一面已通过，等待二面',
+                    update_time: '2024-01-16 14:30:00'
+                },
+                {
+                    id: 2,
+                    company: '阿里巴巴',
+                    position: '后端开发工程师',
+                    salary: '28k-40k',
+                    location: '杭州',
+                    apply_date: '2024-01-10',
+                    description: '负责阿里云相关产品的后端系统开发',
+                    requirements: '精通Java，熟悉Spring Cloud微服务架构',
+                    contact: '李主管',
+                    phone: '139****5678',
+                    email: 'recruit@alibaba.com',
+                    source: 'BOSS直聘',
+                    status: '待面试',
+                    notes: '已收到面试邀请，时间待定',
+                    update_time: '2024-01-12 09:15:00'
+                },
+                {
+                    id: 3,
+                    company: '腾讯',
+                    position: '全栈开发工程师',
+                    salary: '30k-45k',
+                    location: '深圳',
+                    apply_date: '2024-01-08',
+                    description: '负责微信生态相关产品的全栈开发',
+                    requirements: '熟悉前后端开发技术栈，有全栈项目经验',
+                    contact: '王总监',
+                    phone: '137****9012',
+                    email: 'hr@tencent.com',
+                    source: '内推',
+                    status: '已通过',
+                    notes: '已收到offer，准备入职',
+                    update_time: '2024-01-20 16:45:00'
+                }
+            ];
+            jobs = mockData;
+            saveJobs();
+        }
+
+        // 保存数据到本地存储
+        function saveJobs() {
+            localStorage.setItem('jobApplications', JSON.stringify(jobs));
+        }
+
+        // 渲染求职记录列表
+        function renderJobList(jobList) {
+            const jobListElement = document.getElementById('job-list');
+            const emptyMessage = document.getElementById('empty-message');
+            
+            jobListElement.innerHTML = '';
+            
+            if (jobList.length === 0) {
+                emptyMessage.style.display = 'block';
+                return;
+            }
+            
+            emptyMessage.style.display = 'none';
+            
+            jobList.forEach((job, index) => {
+                const row = document.createElement('tr');
+                
+                // 状态样式类
+                let statusClass = '';
+                switch (job.status) {
+                    case '已投递': statusClass = 'status-applied'; break;
+                    case '待面试': statusClass = 'status-interview'; break;
+                    case '面试中': statusClass = 'status-interviewing'; break;
+                    case '已通过': statusClass = 'status-passed'; break;
+                    case '已拒绝': statusClass = 'status-rejected'; break;
+                    case '已放弃': statusClass = 'status-abandoned'; break;
+                }
+                
+                row.innerHTML = `
+                    <td>${job.id}</td>
+                    <td>${job.company}</td>
+                    <td>${job.position}</td>
+                    <td>${job.salary || '-'}</td>
+                    <td>${job.location || '-'}</td>
+                    <td>${job.apply_date}</td>
+                    <td>${job.source || '-'}</td>
+                    <td><span class="status-badge ${statusClass}">${job.status}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="viewJobDetail(${job.id})"><span class="icon">👁</span></button>
+                        <button class="btn btn-sm btn-outline-secondary me-1" onclick="editJob(${job.id})"><span class="icon">✎</span></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteJob(${job.id})"><span class="icon">🗑</span></button>
+                    </td>
+                `;
+                
+                jobListElement.appendChild(row);
+            });
+        }
+
+        // 显示添加记录模态框
+        function showAddJobModal() {
+            document.getElementById('jobModalLabel').textContent = '添加新记录';
+            document.getElementById('job-id').value = '';
+            document.getElementById('jobForm').reset();
+            
+            // 设置今天的日期为默认
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('apply-date').value = today;
+            
+            jobModal.show();
+        }
+
+        // 编辑记录
+        function editJob(id) {
+            const job = jobs.find(job => job.id === id);
+            if (!job) return;
+            
+            document.getElementById('jobModalLabel').textContent = '编辑记录';
+            document.getElementById('job-id').value = job.id;
+            document.getElementById('company').value = job.company;
+            document.getElementById('position').value = job.position;
+            document.getElementById('salary').value = job.salary || '';
+            document.getElementById('location').value = job.location || '';
+            document.getElementById('apply-date').value = job.apply_date;
+            document.getElementById('status').value = job.status;
+            document.getElementById('source').value = job.source || '';
+            document.getElementById('contact').value = job.contact || '';
+            document.getElementById('phone').value = job.phone || '';
+            document.getElementById('email').value = job.email || '';
+            document.getElementById('description').value = job.description || '';
+            document.getElementById('requirements').value = job.requirements || '';
+            document.getElementById('notes').value = job.notes || '';
+            
+            jobModal.show();
+        }
+
+        // 查看记录详情
+        function viewJobDetail(id) {
+            const job = jobs.find(job => job.id === id);
+            if (!job) return;
+            
+            // 状态样式类
+            let statusClass = '';
+            switch (job.status) {
+                case '已投递': statusClass = 'status-applied'; break;
+                case '待面试': statusClass = 'status-interview'; break;
+                case '面试中': statusClass = 'status-interviewing'; break;
+                case '已通过': statusClass = 'status-passed'; break;
+                case '已拒绝': statusClass = 'status-rejected'; break;
+                case '已放弃': statusClass = 'status-abandoned'; break;
+            }
+            
+            const detailContent = `
+                <div class="row">
+                    <div class="col-md-12 mb-4">
+                        <h3 class="text-center mb-2">${job.company}</h3>
+                        <p class="text-center text-muted">${job.position} | ${job.salary || '薪资面议'}</p>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6 class="text-muted">基本信息</h6>
+                            <p><strong>工作地点:</strong> ${job.location || '未填写'}</p>
+                            <p><strong>投递日期:</strong> ${job.apply_date}</p>
+                            <p><strong>当前状态:</strong> <span class="status-badge ${statusClass}">${job.status}</span></p>
+                            <p><strong>招聘来源:</strong> ${job.source || '未填写'}</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6 class="text-muted">联系方式</h6>
+                            <p><strong>联系人:</strong> ${job.contact || '未填写'}</p>
+                            <p><strong>电话:</strong> ${job.phone || '未填写'}</p>
+                            <p><strong>邮箱:</strong> ${job.email || '未填写'}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6 class="text-muted">岗位描述</h6>
+                            <p>${job.description || '未填写'}</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6 class="text-muted">岗位要求</h6>
+                            <p>${job.requirements || '未填写'}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-12">
+                        <div class="mb-3">
+                            <h6 class="text-muted">备注信息</h6>
+                            <p>${job.notes || '未填写'}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-12 text-end text-muted">
+                        <small>最后更新时间: ${job.update_time || '无'}</small>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('detail-content').innerHTML = detailContent;
+            detailModal.show();
+        }
+
+        // 删除记录
+        function deleteJob(id) {
+            document.getElementById('delete-job-id').value = id;
+            deleteModal.show();
+        }
+
+        // 确认删除
+        function confirmDelete() {
+            const id = parseInt(document.getElementById('delete-job-id').value);
+            const index = jobs.findIndex(job => job.id === id);
+            
+            if (index !== -1) {
+                jobs.splice(index, 1);
+                
+                // 重新编号
+                jobs.forEach((job, idx) => {
+                    job.id = idx + 1;
+                });
+                
+                saveJobs();
+                renderJobList(jobs);
+                deleteModal.hide();
+                
+                // 显示成功提示
+                showToast('记录删除成功');
+            }
+        }
+
+        // 保存记录
+        function saveJob() {
+            const id = document.getElementById('job-id').value;
+            const isEdit = !!id;
+            
+            // 获取表单数据
+            const jobData = {
+                company: document.getElementById('company').value,
+                position: document.getElementById('position').value,
+                salary: document.getElementById('salary').value,
+                location: document.getElementById('location').value,
+                apply_date: document.getElementById('apply-date').value,
+                description: document.getElementById('description').value,
+                requirements: document.getElementById('requirements').value,
+                contact: document.getElementById('contact').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                source: document.getElementById('source').value,
+                status: document.getElementById('status').value,
+                notes: document.getElementById('notes').value,
+                update_time: new Date().toLocaleString('zh-CN')
+            };
+            
+            if (isEdit) {
+                // 更新现有记录
+                const index = jobs.findIndex(job => job.id === parseInt(id));
+                if (index !== -1) {
+                    jobs[index] = { ...jobs[index], ...jobData };
+                }
+            } else {
+                // 添加新记录
+                const newId = jobs.length > 0 ? Math.max(...jobs.map(j => j.id)) + 1 : 1;
+                jobs.push({ ...jobData, id: newId });
+            }
+            
+            saveJobs();
+            renderJobList(jobs);
+            jobModal.hide();
+            
+            // 显示成功提示
+            showToast(isEdit ? '记录更新成功' : '记录添加成功');
+        }
+
+        // 筛选求职记录
+        function filterJobs() {
+            const company = document.getElementById('search-company').value.toLowerCase();
+            const position = document.getElementById('search-position').value.toLowerCase();
+            const status = document.getElementById('filter-status').value;
+            const source = document.getElementById('filter-source').value;
+            
+            const filteredJobs = jobs.filter(job => {
+                const matchCompany = !company || job.company.toLowerCase().includes(company);
+                const matchPosition = !position || job.position.toLowerCase().includes(position);
+                const matchStatus = !status || job.status === status;
+                const matchSource = !source || job.source === source;
+                
+                return matchCompany && matchPosition && matchStatus && matchSource;
+            });
+            
+            renderJobList(filteredJobs);
+        }
+
+        // 导出为CSV
+        function exportToCSV() {
+            if (jobs.length === 0) {
+                showToast('没有记录可导出');
+                return;
+            }
+            
+            // CSV表头
+            const headers = ['ID', '公司', '岗位', '薪资', '地点', '投递日期', '状态', '来源', '联系人', '电话', '邮箱', '更新时间'];
+            
+            // 构建CSV内容
+            let csvContent = headers.join(',') + '\n';
+            
+            jobs.forEach(job => {
+                const row = [
+                    job.id,
+                    `"${job.company}"`,
+                    `"${job.position}"`,
+                    `"${job.salary || ''}"`,
+                    `"${job.location || ''}"`,
+                    job.apply_date,
+                    `"${job.status}"`,
+                    `"${job.source || ''}"`,
+                    `"${job.contact || ''}"`,
+                    `"${job.phone || ''}"`,
+                    `"${job.email || ''}"`,
+                    `"${job.update_time || ''}"`
+                ];
+                csvContent += row.join(',') + '\n';
+            });
+            
+            // 创建下载链接
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `求职记录_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast('CSV导出成功');
+        }
+
+        // 显示统计信息
+        function showStatistics() {
+            if (jobs.length === 0) {
+                showToast('没有记录可统计');
+                return;
+            }
+            
+            // 计算统计数据
+            const totalCount = jobs.length;
+            const interviewCount = jobs.filter(job => ['待面试', '面试中'].includes(job.status)).length;
+            const passedCount = jobs.filter(job => job.status === '已通过').length;
+            const rejectedCount = jobs.filter(job => ['已拒绝', '已放弃'].includes(job.status)).length;
+            
+            // 更新统计数字
+            document.getElementById('total-count').textContent = totalCount;
+            document.getElementById('interview-count').textContent = interviewCount;
+            document.getElementById('passed-count').textContent = passedCount;
+            document.getElementById('rejected-count').textContent = rejectedCount;
+            
+            // 准备统计数据（简化版，不使用图表）
+            prepareStatistics();
+            
+            // 显示最近投递
+            showRecentJobs();
+            
+            statsModal.show();
+        }
+
+        // 准备统计数据（简化版）
+        function prepareStatistics() {
+            // 按状态统计
+            const statusCounts = {};
+            jobs.forEach(job => {
+                statusCounts[job.status] = (statusCounts[job.status] || 0) + 1;
+            });
+            
+            // 按来源统计
+            const sourceCounts = {};
+            jobs.forEach(job => {
+                const source = job.source || '未知';
+                sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+            });
+            
+            // 替换图表容器为简单的统计表格
+            const statusChartContainer = document.getElementById('statusChart').parentNode;
+            statusChartContainer.innerHTML = createSimpleStatsTable('状态分布', statusCounts);
+            
+            const sourceChartContainer = document.getElementById('sourceChart').parentNode;
+            sourceChartContainer.innerHTML = createSimpleStatsTable('来源分布', sourceCounts);
+        }
+        
+        // 创建简单的统计表格
+        function createSimpleStatsTable(title, data) {
+            let rows = '';
+            Object.entries(data).forEach(([key, value]) => {
+                rows += `
+                    <tr>
+                        <td>${key}</td>
+                        <td class="text-end">${value}</td>
+                    </tr>
+                `;
+            });
+            
+            return `
+                <h6>${title}</h6>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>${title.includes('状态') ? '状态' : '来源'}</th>
+                            <th class="text-end">数量</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // 显示最近投递记录
+        function showRecentJobs() {
+            const recentJobs = [...jobs]
+                .sort((a, b) => new Date(b.apply_date) - new Date(a.apply_date))
+                .slice(0, 5);
+            
+            const recentJobsElement = document.getElementById('recent-jobs');
+            recentJobsElement.innerHTML = '';
+            
+            recentJobs.forEach(job => {
+                // 状态样式类
+                let statusClass = '';
+                switch (job.status) {
+                    case '已投递': statusClass = 'status-applied'; break;
+                    case '待面试': statusClass = 'status-interview'; break;
+                    case '面试中': statusClass = 'status-interviewing'; break;
+                    case '已通过': statusClass = 'status-passed'; break;
+                    case '已拒绝': statusClass = 'status-rejected'; break;
+                    case '已放弃': statusClass = 'status-abandoned'; break;
+                }
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${job.apply_date}</td>
+                    <td>${job.company}</td>
+                    <td>${job.position}</td>
+                    <td><span class="status-badge ${statusClass}">${job.status}</span></td>
+                `;
+                recentJobsElement.appendChild(row);
+            });
+        }
+
+        // 显示提示消息
+        function showToast(message) {
+            // 创建toast元素
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed bottom-0 end-0 m-4 p-3 bg-success text-white rounded shadow-lg';
+            toast.textContent = message;
+            toast.style.zIndex = '1060';
+            
+            // 添加到页面
+            document.body.appendChild(toast);
+            
+            // 显示动画
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s ease-in-out';
+            setTimeout(() => {
+                toast.style.opacity = '1';
+            }, 10);
+            
+            // 自动移除
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // 暴露函数到全局
+        window.viewJobDetail = viewJobDetail;
+        window.editJob = editJob;
+        window.deleteJob = deleteJob;
+    </script>
+</body>
+</html>

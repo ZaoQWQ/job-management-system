@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}岗位详情 - 岗位管理系统{% endblock %}
+{% block content %}
+    <h2>岗位详情</h2>
+    
+    <div>
+        <div class="detail-item">
+            <div class="detail-label">ID</div>
+            <div class="detail-value">{{ job.id }}</div>
+        </div>
+        
+        <div class="detail-item">
+            <div class="detail-label">企业名称</div>
+            <div class="detail-value">{{ job.company_name }}</div>
+        </div>
+        
+        <div class="detail-item">
+            <div class="detail-label">岗位名称</div>
+            <div class="detail-value">{{ job.job_title }}</div>
+        </div>
+        
+        <div class="detail-item">
+            <div class="detail-label">薪资</div>
+            <div class="detail-value">{{ job.salary }}</div>
+        </div>
+        
+        <div class="detail-item">
+            <div class="detail-label">具体要求</div>
+            <div class="detail-value">{{ job.requirements }}</div>
+        </div>
+        
+        <div class="detail-item">
+            <div class="detail-label">工作地点</div>
+            <div class="detail-value">{{ job.location }}</div>
+        </div>
+        
+        <div class="detail-item">
+            <div class="detail-label">发布日期</div>
+            <div class="detail-value">{{ job.posted_date }}</div>
+        </div>
+        
+        <div class="detail-item">
+            <div class="detail-label">岗位描述</div>
+            <div class="detail-value">{{ job.description }}</div>
+        </div>
+        
+        <div class="detail-item">
+            <div class="detail-label">联系人</div>
+            <div class="detail-value">{{ job.contact_person }}</div>
+        </div>
+        
+        <div class="detail-item">
+            <div class="detail-label">联系电话</div>
+            <div class="detail-value">{{ job.contact_phone }}</div>
+        </div>
+        
+        <div class="detail-item">
+            <div class="detail-label">电子邮箱</div>
+            <div class="detail-value">{{ job.email }}</div>
+        </div>
+        
+        <div class="actions" style="margin-top: 30px;">
+            <a href="{{ url_for('update_job', job_id=job.id) }}" class="btn btn-primary">编辑</a>
+            <a href="{{ url_for('delete_job', job_id=job.id) }}" class="btn btn-danger">删除</a>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">返回列表</a>
+        </div>
+    </div>
+{% endblock %}
