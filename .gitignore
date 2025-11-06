@@ -62,3 +62,6 @@ build/
 dist/
 eggs/
 *.egg-info/
+
+# Test repository
+test_git_repo/

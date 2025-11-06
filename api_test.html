@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>API测试工具</title>
+    <script>
+        async function testApi() {
+            console.log('开始测试API...');
+            
+            // 1. 测试GET请求 - 获取所有岗位
+            console.log('\n1. 测试获取所有岗位');
+            try {
+                const response = await fetch('/api/jobs');
+                console.log('GET响应状态码:', response.status);
+                const data = await response.json();
+                console.log('GET响应数据:', data);
+            } catch (error) {
+                console.error('GET请求失败:', error);
+            }
+            
+            // 2. 测试POST请求 - 添加新岗位
+            console.log('\n2. 测试添加新岗位');
+            try {
+                const newJob = {
+                    company_name: '测试公司',
+                    job_title: '测试岗位',
+                    salary: '15k-25k',
+                    location: '北京',
+                    application_date: '2024-01-20',
+                    status: '已投递',
+                    notes: '这是一条测试记录'
+                };
+                
+                const response = await fetch('/api/jobs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newJob)
+                });
+                
+                console.log('POST响应状态码:', response.status);
+                const data = await response.json();
+                console.log('POST响应数据:', data);
+                
+                // 如果添加成功，获取新添加的岗位ID用于后续测试
+                if (data.success && data.id) {
+                    const newJobId = data.id;
+                    
+                    // 3. 测试PUT请求 - 更新岗位
+                    console.log('\n3. 测试更新岗位 (ID:', newJobId, ')');
+                    try {
+                        const updatedJob = {
+                            company_name: '更新后的公司',
+                            job_title: '更新后的岗位',
+                            salary: '20k-30k',
+                            location: '上海',
+                            application_date: '2024-01-21',
+                            status: '待面试',
+                            notes: '这是更新后的测试记录'
+                        };
+                        
+                        const updateResponse = await fetch(`/api/job/${newJobId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(updatedJob)
+                        });
+                        
+                        console.log('PUT响应状态码:', updateResponse.status);
+                        const updateData = await updateResponse.json();
+                        console.log('PUT响应数据:', updateData);
+                        
+                        // 4. 测试DELETE请求 - 删除岗位
+                        console.log('\n4. 测试删除岗位 (ID:', newJobId, ')');
+                        try {
+                            const deleteResponse = await fetch(`/api/job/${newJobId}`, {
+                                method: 'DELETE'
+                            });
+                            
+                            console.log('DELETE响应状态码:', deleteResponse.status);
+                            const deleteData = await deleteResponse.json();
+                            console.log('DELETE响应数据:', deleteData);
+                        } catch (error) {
+                            console.error('DELETE请求失败:', error);
+                        }
+                    } catch (error) {
+                        console.error('PUT请求失败:', error);
+                    }
+                }
+            } catch (error) {
+                console.error('POST请求失败:', error);
+            }
+            
+            console.log('\nAPI测试完成，请查看控制台输出和后端日志。');
+        }
+    </script>
+</head>
+<body>
+    <h1>API测试工具</h1>
+    <p>点击下方按钮开始测试增删改查功能：</p>
+    <button onclick="testApi()">开始测试API</button>
+    <p>请在浏览器控制台查看测试结果。</p>
+</body>
+</html>

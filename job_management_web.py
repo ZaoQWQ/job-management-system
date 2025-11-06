@@ -13,10 +13,14 @@ import os
 import sys
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask_cors import CORS  # 添加CORS支持
 
 # 创建Flask应用实例
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'  # 用于flash消息的安全密钥
+app.secret_key = 'job_management_system_secret_key_2024'  # 用于flash消息的安全密钥
+
+# 启用CORS支持，允许前端从不同端口访问API
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # 数据库文件名
 DB_FILE = 'job_management.db'
@@ -39,7 +43,11 @@ def init_database():
         description TEXT,
         contact_person TEXT,
         contact_phone TEXT,
-        email TEXT
+        email TEXT,
+        status TEXT DEFAULT '待申请',
+        application_date DATE,
+        notes TEXT,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     '''
     
@@ -69,6 +77,27 @@ def close_connection(exception):
     except:
         pass
 
+@app.route('/job_tracker.html')
+def job_tracker():
+    """岗位跟踪器页面路由"""
+    # 直接返回job_tracker.html文件
+    import os
+    file_path = os.path.join(app.root_path, 'job_tracker.html')
+    with open(file_path, 'r', encoding='utf-8') as f:
+        return f.read()
+
+@app.route('/api_test.html')
+def api_test():
+    """API测试页面"""
+    import os
+    file_path = os.path.join(app.root_path, 'api_test.html')
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return f.read()
+    except Exception as e:
+        return f"文件读取失败: {str(e)}", 500
+
+# 保持原有的index函数作为主要路由
 @app.route('/')
 def index():
     """首页，显示岗位列表"""
@@ -245,7 +274,8 @@ def update_job(job_id):
         # 更新数据
         update_sql = '''
         UPDATE jobs SET company_name=?, job_title=?, salary=?, requirements=?, location=?,
-                       description=?, contact_person=?, contact_phone=?, email=?
+                       description=?, contact_person=?, contact_phone=?, email=?,
+                       status=?, application_date=?, notes=?, updated_at=CURRENT_TIMESTAMP
         WHERE id=?
         '''
         
@@ -255,7 +285,9 @@ def update_job(job_id):
             cursor = conn.cursor()
             cursor.execute(update_sql, (
                 company_name, job_title, salary, requirements, location,
-                description, contact_person, contact_phone, email, job_id
+                description, contact_person, contact_phone, email,
+                request.form.get('status', '待申请'), request.form.get('application_date'), request.form.get('notes'),
+                job_id
             ))
             conn.commit()
             flash(f"岗位 {job_id} 更新成功！")
@@ -294,7 +326,10 @@ def update_job(job_id):
             'description': job[7] or '',
             'contact_person': job[8] or '',
             'contact_phone': job[9] or '',
-            'email': job[10] or ''
+            'email': job[10] or '',
+            'status': job[11] or '待申请',
+            'application_date': job[12] or '',
+            'notes': job[13] or ''
         }
         
         return render_template('update_job.html', job=job_details)
@@ -360,67 +395,204 @@ def delete_job(job_id):
         conn.close()
 
 # API接口，用于异步操作
-@app.route('/api/jobs', methods=['GET'])
+@app.route('/api/jobs', methods=['GET', 'POST'])
 def api_jobs():
-    """获取岗位列表的API接口"""
-    # 获取数据库连接
-    conn = get_db_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, company_name, job_title, salary, location, posted_date FROM jobs ORDER BY posted_date DESC")
-        jobs = cursor.fetchall()
+    """API端点：获取岗位列表或添加新岗位"""
+    if request.method == 'GET':
+        print("API请求: 获取岗位列表")
+        # 获取数据库连接
+        conn = get_db_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, company_name, job_title, salary, location, posted_date, status, application_date, notes, updated_at FROM jobs ORDER BY posted_date DESC")
+            jobs = cursor.fetchall()
+            
+            # 转换为JSON格式
+            result = []
+            for job in jobs:
+                result.append({
+                    'id': job[0],
+                    'company_name': job[1],
+                    'job_title': job[2],
+                    'salary': job[3] or '未填写',
+                    'location': job[4] or '未填写',
+                    'posted_date': job[5],
+                    'status': job[6] or '待申请',
+                    'application_date': job[7],
+                    'notes': job[8],
+                    'updated_at': job[9]
+                })
+            
+            return jsonify({'success': True, 'data': result})
+        except sqlite3.Error as e:
+            return jsonify({'error': str(e)}), 500
+        finally:
+            conn.close()
+    elif request.method == 'POST':
+        print("API请求: 添加新岗位")
+        # 获取JSON数据
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': '请求数据不能为空'}), 400
         
-        # 转换为JSON格式
-        result = []
-        for job in jobs:
-            result.append({
+        # 获取必要字段
+        company_name = data.get('company_name', '').strip()
+        job_title = data.get('job_title', '').strip()
+        
+        # 验证必填字段
+        if not company_name:
+            return jsonify({'error': '企业名称不能为空'}), 400
+        if not job_title:
+            return jsonify({'error': '岗位名称不能为空'}), 400
+        
+        # 获取其他字段
+        salary = data.get('salary', '').strip()
+        requirements = data.get('requirements', '').strip()
+        location = data.get('location', '').strip()
+        description = data.get('description', '').strip()
+        contact_person = data.get('contact_person', '').strip()
+        contact_phone = data.get('contact_phone', '').strip()
+        email = data.get('email', '').strip()
+        status = data.get('status', '待申请')
+        application_date = data.get('application_date')
+        notes = data.get('notes', '').strip()
+        
+        # 插入数据
+        insert_sql = '''
+        INSERT INTO jobs (company_name, job_title, salary, requirements, location, 
+                         description, contact_person, contact_phone, email, status, application_date, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        '''
+        
+        # 获取数据库连接
+        conn = get_db_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(insert_sql, (
+                company_name, job_title, salary, requirements, location,
+                description, contact_person, contact_phone, email, status, application_date, notes
+            ))
+            conn.commit()
+            return jsonify({'success': True, 'message': '岗位添加成功', 'id': cursor.lastrowid})
+        except sqlite3.Error as e:
+            return jsonify({'error': str(e)}), 500
+        finally:
+            conn.close()
+
+@app.route('/api/job/<int:job_id>', methods=['GET', 'PUT', 'DELETE'])
+def api_job(job_id):
+    """获取单个岗位详情、更新或删除岗位的API接口"""
+    # 检查岗位是否存在
+    def check_job_exists(conn, job_id):
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM jobs WHERE id = ?", (job_id,))
+        return cursor.fetchone()
+    
+    if request.method == 'GET':
+        print(f"API请求: 获取岗位详情 (ID: {job_id})")
+        # 获取数据库连接
+        conn = get_db_connection()
+        try:
+            job = check_job_exists(conn, job_id)
+            
+            if not job:
+                return jsonify({'error': '岗位不存在'}), 404
+            
+            # 转换为JSON格式
+            result = {
                 'id': job[0],
                 'company_name': job[1],
                 'job_title': job[2],
                 'salary': job[3] or '未填写',
-                'location': job[4] or '未填写',
-                'posted_date': job[5]
-            })
+                'requirements': job[4] or '未填写',
+                'location': job[5] or '未填写',
+                'posted_date': job[6],
+                'description': job[7] or '未填写',
+                'contact_person': job[8] or '未填写',
+                'contact_phone': job[9] or '未填写',
+                'email': job[10] or '未填写'
+            }
+            
+            return jsonify({'success': True, 'data': result})
+        except sqlite3.Error as e:
+            return jsonify({'error': str(e)}), 500
+        finally:
+            conn.close()
+    
+    elif request.method == 'PUT':
+        print(f"API请求: 更新岗位 (ID: {job_id})")
+        # 获取JSON数据
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': '请求数据不能为空'}), 400
         
-        return jsonify({'success': True, 'data': result})
-    except sqlite3.Error as e:
-        return jsonify({'error': str(e)}), 500
-    finally:
-        conn.close()
-
-@app.route('/api/job/<int:job_id>', methods=['GET'])
-def api_job(job_id):
-    """获取单个岗位详情的API接口"""
-    # 获取数据库连接
-    conn = get_db_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM jobs WHERE id = ?", (job_id,))
-        job = cursor.fetchone()
-        
-        if not job:
-            return jsonify({'error': '岗位不存在'}), 404
-        
-        # 转换为JSON格式
-        result = {
-            'id': job[0],
-            'company_name': job[1],
-            'job_title': job[2],
-            'salary': job[3] or '未填写',
-            'requirements': job[4] or '未填写',
-            'location': job[5] or '未填写',
-            'posted_date': job[6],
-            'description': job[7] or '未填写',
-            'contact_person': job[8] or '未填写',
-            'contact_phone': job[9] or '未填写',
-            'email': job[10] or '未填写'
-        }
-        
-        return jsonify({'success': True, 'data': result})
-    except sqlite3.Error as e:
-        return jsonify({'error': str(e)}), 500
-    finally:
-        conn.close()
+        # 获取数据库连接
+        conn = get_db_connection()
+        try:
+            # 检查岗位是否存在
+            if not check_job_exists(conn, job_id):
+                return jsonify({'error': '岗位不存在'}), 404
+            
+            # 获取必要字段
+            company_name = data.get('company_name', '').strip()
+            job_title = data.get('job_title', '').strip()
+            
+            # 验证必填字段
+            if not company_name:
+                return jsonify({'error': '企业名称不能为空'}), 400
+            if not job_title:
+                return jsonify({'error': '岗位名称不能为空'}), 400
+            
+            # 获取其他字段
+            salary = data.get('salary', '').strip()
+            requirements = data.get('requirements', '').strip()
+            location = data.get('location', '').strip()
+            description = data.get('description', '').strip()
+            contact_person = data.get('contact_person', '').strip()
+            contact_phone = data.get('contact_phone', '').strip()
+            email = data.get('email', '').strip()
+            
+            # 更新数据
+            update_sql = '''
+            UPDATE jobs SET company_name = ?, job_title = ?, salary = ?, 
+                           requirements = ?, location = ?, description = ?, 
+                           contact_person = ?, contact_phone = ?, email = ?
+            WHERE id = ?
+            '''
+            
+            cursor = conn.cursor()
+            cursor.execute(update_sql, (
+                company_name, job_title, salary, requirements, location,
+                description, contact_person, contact_phone, email, job_id
+            ))
+            conn.commit()
+            
+            return jsonify({'success': True, 'message': '岗位更新成功'})
+        except sqlite3.Error as e:
+            return jsonify({'error': str(e)}), 500
+        finally:
+            conn.close()
+    
+    elif request.method == 'DELETE':
+        print(f"API请求: 删除岗位 (ID: {job_id})")
+        # 获取数据库连接
+        conn = get_db_connection()
+        try:
+            # 检查岗位是否存在
+            if not check_job_exists(conn, job_id):
+                return jsonify({'error': '岗位不存在'}), 404
+            
+            # 删除数据
+            delete_sql = "DELETE FROM jobs WHERE id = ?"
+            cursor = conn.cursor()
+            cursor.execute(delete_sql, (job_id,))
+            conn.commit()
+            
+            return jsonify({'success': True, 'message': '岗位删除成功'})
+        except sqlite3.Error as e:
+            return jsonify({'error': str(e)}), 500
+        finally:
+            conn.close()
 
 # 创建模板目录和HTML文件
 def create_templates():
@@ -954,23 +1126,33 @@ def create_templates():
 
 # 检查Flask是否安装
 def check_flask_installed():
+    """检查Flask和相关依赖是否已安装"""
     try:
         import flask
-        print(f"检测到Flask已安装，版本: {flask.__version__}")
+        print(f"检测到Flask版本: {flask.__version__}")
+        # 检查CORS扩展
+        try:
+            import flask_cors
+            print(f"检测到Flask-CORS版本: {flask_cors.__version__}")
+        except ImportError:
+            print("未检测到Flask-CORS，将安装")
         return True
     except ImportError:
+        print("未检测到Flask")
         return False
 
 # 安装Flask
 def install_flask():
-    print("正在安装Flask...")
+    """安装Flask和相关依赖"""
+    print("正在安装Flask和相关依赖...")
     try:
         import subprocess
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'flask'])
-        print("Flask安装成功")
+        # 安装Flask和Flask-CORS
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'flask', 'flask-cors'])
+        print("Flask和Flask-CORS安装成功")
         return True
     except subprocess.CalledProcessError:
-        print("Flask安装失败，请手动运行: pip install flask")
+        print("安装失败，请手动运行: pip install flask flask-cors")
         return False
 
 if __name__ == '__main__':
@@ -978,6 +1160,9 @@ if __name__ == '__main__':
     if not check_flask_installed():
         if not install_flask():
             sys.exit(1)
+    
+    # 初始化数据库
+    init_database()
     
     # 创建模板文件
     create_templates()
